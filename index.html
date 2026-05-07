@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Project Charter Generator</title>
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-dark: #4f46e5;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #334155;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: #475569;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; align-items: center; gap: 1rem; }
+    header h1 { font-size: 1.4rem; font-weight: 700; color: var(--text); }
+    header span.badge { background: var(--primary); color: #fff; font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+    .card h2 { font-size: 1rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1.2rem; }
+    label { display: block; font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.3rem; margin-top: 0.9rem; }
+    input, select, textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 0.6rem 0.8rem; color: var(--text); font-size: 0.9rem; transition: border-color 0.2s; outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+    textarea { resize: vertical; min-height: 80px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.4rem; border-radius: 8px; font-size: 0.95rem; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-success { background: var(--success); color: #fff; }
+    .actions { display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap; }
+    .output-section { margin-top: 2rem; }
+    .charter-view { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; }
+    .charter-view h3 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--primary); }
+    .charter-section { margin-top: 1.5rem; }
+    .charter-section h4 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); border-bottom: 1px solid var(--border); padding-bottom: 0.4rem; margin-bottom: 0.7rem; }
+    .charter-section p, .charter-section li { font-size: 0.95rem; line-height: 1.7; color: var(--text); }
+    .charter-section ul { padding-left: 1.2rem; }
+    .risk-table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.88rem; }
+    .risk-table th { background: var(--surface2); padding: 0.5rem 0.8rem; text-align: left; color: var(--text-muted); font-weight: 600; }
+    .risk-table td { padding: 0.5rem 0.8rem; border-top: 1px solid var(--border); }
+    .tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; }
+    .tag-high { background: #fef2f2; color: #b91c1c; }
+    .tag-medium { background: #fffbeb; color: #92400e; }
+    .tag-low { background: #f0fdf4; color: #166534; }
+    .json-out { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; color: #a5f3fc; max-height: 300px; overflow-y: auto; margin-top: 1rem; }
+    .hidden { display: none; }
+    .loader { display: inline-block; width: 16px; height: 16px; border: 2px solid #ffffff44; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .tab-bar { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+    .tab { padding: 0.6rem 1.2rem; cursor: pointer; font-size: 0.9rem; color: var(--text-muted); border-bottom: 2px solid transparent; transition: all 0.2s; }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .stakeholder-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .stakeholder-row input { flex: 1; }
+    .rm-btn { background: var(--danger); color: #fff; border: none; border-radius: 6px; padding: 0 0.7rem; cursor: pointer; font-size: 1rem; }
+    .add-btn { background: var(--surface2); color: var(--text); border: none; border-radius: 6px; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.85rem; margin-top: 0.3rem; }
+    .progress-bar { height: 4px; background: var(--surface2); border-radius: 99px; overflow: hidden; margin-bottom: 1.5rem; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), #a855f7); border-radius: 99px; transition: width 0.4s; }
+    .api-note { background: #1e293b; border: 1px solid #f59e0b44; border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem; }
+    .api-note strong { color: #f59e0b; }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+  <h1>AI Project Charter Generator</h1>
+  <span class="badge">PRO</span>
+</header>
+
+<div class="container">
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+  <div class="grid">
+    <!-- INPUT FORM -->
+    <div>
+      <div class="card">
+        <h2>Project Details</h2>
+
+        <label>Project Name *</label>
+        <input type="text" id="projectName" placeholder="e.g. Customer Portal Redesign" oninput="updateProgress()" />
+
+        <label>Project Description *</label>
+        <textarea id="projectDesc" placeholder="Briefly describe the project goals and scope..." oninput="updateProgress()"></textarea>
+
+        <div class="row">
+          <div>
+            <label>Start Date</label>
+            <input type="date" id="startDate" />
+          </div>
+          <div>
+            <label>End Date</label>
+            <input type="date" id="endDate" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Budget</label>
+            <input type="text" id="budget" placeholder="e.g. $150,000" />
+          </div>
+          <div>
+            <label>Industry / Context</label>
+            <input type="text" id="industry" placeholder="e.g. FinTech, Healthcare..." oninput="updateProgress()" />
+          </div>
+        </div>
+
+        <label>Project Type</label>
+        <select id="projectType">
+          <option value="software">Software Development</option>
+          <option value="data">Data / Analytics</option>
+          <option value="ai">AI / Machine Learning</option>
+          <option value="infra">Infrastructure / DevOps</option>
+          <option value="product">Product Launch</option>
+          <option value="other">Other</option>
+        </select>
+
+        <label>Project Manager / Sponsor</label>
+        <input type="text" id="sponsor" placeholder="Name & role" />
+      </div>
+
+      <div class="card" style="margin-top:1.5rem">
+        <h2>Key Stakeholders</h2>
+        <div id="stakeholderList">
+          <div class="stakeholder-row">
+            <input type="text" placeholder="Name" />
+            <input type="text" placeholder="Role" />
+            <button class="rm-btn" onclick="removeStakeholder(this)">×</button>
+          </div>
+        </div>
+        <button class="add-btn" onclick="addStakeholder()">+ Add Stakeholder</button>
+      </div>
+
+      <div class="card" style="margin-top:1.5rem">
+        <h2>OpenAI API Key (Optional)</h2>
+        <div class="api-note"><strong>Note:</strong> Without an API key the charter is generated locally using smart templates. With a key, GPT-4 enriches every section.</div>
+        <label>API Key</label>
+        <input type="password" id="apiKey" placeholder="sk-..." />
+        <div class="actions">
+          <button class="btn btn-primary" onclick="generateCharter()">
+            <span id="btnIcon">✨</span> <span id="btnText">Generate Charter</span>
+          </button>
+          <button class="btn btn-outline" onclick="resetForm()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div>
+      <div id="outputPlaceholder" class="card" style="display:flex;align-items:center;justify-content:center;min-height:300px;color:var(--text-muted);text-align:center;flex-direction:column;gap:1rem;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+        <p>Fill in the form and click<br/><strong>Generate Charter</strong></p>
+      </div>
+
+      <div id="outputSection" class="hidden">
+        <div class="tab-bar">
+          <div class="tab active" onclick="showTab('rendered')">Rendered Charter</div>
+          <div class="tab" onclick="showTab('json')">Raw JSON</div>
+        </div>
+
+        <div id="tabRendered">
+          <div class="charter-view" id="charterView"></div>
+        </div>
+        <div id="tabJson" class="hidden">
+          <div class="json-out" id="jsonOut"></div>
+        </div>
+
+        <div class="actions" style="margin-top:1rem">
+          <button class="btn btn-success" onclick="exportDoc()">⬇ Export .doc</button>
+          <button class="btn btn-outline" onclick="exportJSON()">⬇ Export JSON</button>
+          <button class="btn btn-outline" onclick="copyToClipboard()">📋 Copy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Stakeholders ───────────────────────────────────────────────────────────
+function addStakeholder() {
+  const list = document.getElementById('stakeholderList');
+  const row = document.createElement('div');
+  row.className = 'stakeholder-row';
+  row.innerHTML = '<input type="text" placeholder="Name"><input type="text" placeholder="Role"><button class="rm-btn" onclick="removeStakeholder(this)">×</button>';
+  list.appendChild(row);
+}
+function removeStakeholder(btn) {
+  btn.parentElement.remove();
+}
+function getStakeholders() {
+  const rows = document.querySelectorAll('#stakeholderList .stakeholder-row');
+  return Array.from(rows).map(r => {
+    const inputs = r.querySelectorAll('input');
+    return { name: inputs[0].value.trim(), role: inputs[1].value.trim() };
+  }).filter(s => s.name);
+}
+
+// ─── Progress ────────────────────────────────────────────────────────────────
+function updateProgress() {
+  const fields = ['projectName','projectDesc','industry'];
+  const filled = fields.filter(f => document.getElementById(f).value.trim()).length;
+  document.getElementById('progressFill').style.width = (filled / fields.length * 100) + '%';
+}
+
+// ─── Tab switching ────────────────────────────────────────────────────────────
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tabRendered').classList.toggle('hidden', tab !== 'rendered');
+  document.getElementById('tabJson').classList.toggle('hidden', tab !== 'json');
+}
+
+// ─── Template Generator ───────────────────────────────────────────────────────
+function generateLocal(data) {
+  const { name, desc, type, industry, sponsor, startDate, endDate, budget, stakeholders } = data;
+  const typeLabels = { software:'Software Development', data:'Data & Analytics', ai:'AI / ML', infra:'Infrastructure', product:'Product Launch', other:'Custom' };
+  const typeLabel = typeLabels[type] || type;
+  const duration = (startDate && endDate) ? Math.round((new Date(endDate)-new Date(startDate))/(1000*60*60*24*30)) + ' months' : 'TBD';
+
+  const risks = [
+    { risk: 'Scope Creep', prob: 'High', impact: 'High', mitigation: 'Strict change management process' },
+    { risk: 'Resource Availability', prob: 'Medium', impact: 'Medium', mitigation: 'Pre-allocate key team members; identify backups' },
+    { risk: 'Technical Complexity', prob: 'Medium', impact: 'High', mitigation: 'Spike tasks and PoCs in early sprints' },
+    { risk: 'Stakeholder Alignment', prob: 'Low', impact: 'High', mitigation: 'Regular steering-committee reviews' },
+    { risk: 'Budget Overrun', prob: 'Low', impact: 'High', mitigation: 'Weekly budget tracking; 15% contingency reserve' },
+  ];
+
+  const goals = [
+    'Deliver ' + name + ' on time and within budget',
+    'Achieve measurable improvement in ' + (industry || 'business') + ' processes',
+    'Ensure adoption by all identified stakeholders',
+    'Establish baseline KPIs and track post-launch for 90 days',
+  ];
+
+  const deliverables = [
+    'Project Charter & Kickoff deck',
+    type === 'software' || type === 'ai' ? 'Technical Architecture Document' : 'Detailed Project Plan',
+    'Weekly Status Reports',
+    'User Acceptance Testing (UAT) sign-off',
+    'Deployment & Go-Live',
+    'Post-Implementation Review',
+  ];
+
+  const commPlan = [
+    { audience: 'Executive Sponsor', frequency: 'Monthly', channel: 'Steering Committee', owner: sponsor || 'PM' },
+    { audience: 'Project Team', frequency: 'Weekly', channel: 'Stand-up / Slack', owner: sponsor || 'PM' },
+    { audience: 'All Stakeholders', frequency: 'Bi-weekly', channel: 'Status Email', owner: sponsor || 'PM' },
+  ];
+
+  return {
+    title: name,
+    type: typeLabel,
+    industry: industry || 'General',
+    sponsor: sponsor || 'TBD',
+    startDate: startDate || 'TBD',
+    endDate: endDate || 'TBD',
+    duration,
+    budget: budget || 'TBD',
+    description: desc,
+    goals,
+    deliverables,
+    stakeholders: stakeholders.length ? stakeholders : [{ name: sponsor || 'TBD', role: 'Project Sponsor' }],
+    risks,
+    commPlan,
+    assumptions: [
+      'Adequate resources will be allocated throughout the project',
+      'Stakeholders will be available for timely approvals',
+      'No major regulatory changes during the project lifecycle',
+    ],
+    constraints: [
+      budget ? 'Budget capped at ' + budget : 'Budget to be confirmed',
+      endDate ? 'Go-live deadline: ' + endDate : 'Timeline subject to resource availability',
+      'Must comply with existing IT security policies',
+    ],
+    successCriteria: [
+      'Project delivered within ±10% of budget',
+      'All deliverables accepted by stakeholders',
+      'User satisfaction score ≥ 4/5 post-launch',
+    ],
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+// ─── AI Generator ─────────────────────────────────────────────────────────────
+async function generateWithAI(data, apiKey) {
+  const prompt = `You are a senior PMO consultant. Generate a comprehensive project charter as a valid JSON object (no markdown, no code block).
+Project: ${data.name}
+Description: ${data.desc}
+Type: ${data.type}
+Industry: ${data.industry}
+Budget: ${data.budget}
+Start: ${data.startDate}  End: ${data.endDate}
+Sponsor: ${data.sponsor}
+Stakeholders: ${JSON.stringify(data.stakeholders)}
+
+Return a JSON with these exact keys: title, type, industry, sponsor, startDate, endDate, duration, budget, description, goals (array), deliverables (array), stakeholders (array of {name,role}), risks (array of {risk,prob,impact,mitigation}), commPlan (array of {audience,frequency,channel,owner}), assumptions (array), constraints (array), successCriteria (array), generatedAt.`;
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+    body: JSON.stringify({ model: 'gpt-4o', messages: [{ role: 'user', content: prompt }], temperature: 0.7 })
+  });
+  if (!res.ok) throw new Error('OpenAI API error: ' + res.status);
+  const json = await res.json();
+  return JSON.parse(json.choices[0].message.content);
+}
+
+// ─── Render Charter ───────────────────────────────────────────────────────────
+function renderCharter(c) {
+  const riskTag = p => {
+    const cls = p === 'High' ? 'tag-high' : p === 'Medium' ? 'tag-medium' : 'tag-low';
+    return `<span class="tag ${cls}">${p}</span>`;
+  };
+
+  document.getElementById('charterView').innerHTML = `
+    <h3>${c.title}</h3>
+    <p style="color:var(--text-muted);font-size:0.85rem">${c.type} · ${c.industry} · Generated ${new Date(c.generatedAt).toLocaleDateString()}</p>
+
+    <div class="charter-section">
+      <h4>Project Overview</h4>
+      <p>${c.description}</p>
+    </div>
+
+    <div class="charter-section">
+      <h4>Key Information</h4>
+      <table class="risk-table">
+        <tr><th>Sponsor</th><td>${c.sponsor}</td><th>Budget</th><td>${c.budget}</td></tr>
+        <tr><th>Start Date</th><td>${c.startDate}</td><th>End Date</th><td>${c.endDate}</td></tr>
+        <tr><th>Duration</th><td colspan="3">${c.duration}</td></tr>
+      </table>
+    </div>
+
+    <div class="charter-section">
+      <h4>Goals & Objectives</h4>
+      <ul>${c.goals.map(g => `<li>${g}</li>`).join('')}</ul>
+    </div>
+
+    <div class="charter-section">
+      <h4>Deliverables</h4>
+      <ul>${c.deliverables.map(d => `<li>${d}</li>`).join('')}</ul>
+    </div>
+
+    <div class="charter-section">
+      <h4>Stakeholders</h4>
+      <table class="risk-table">
+        <tr><th>Name</th><th>Role</th></tr>
+        ${c.stakeholders.map(s => `<tr><td>${s.name}</td><td>${s.role}</td></tr>`).join('')}
+      </table>
+    </div>
+
+    <div class="charter-section">
+      <h4>Risk Register</h4>
+      <table class="risk-table">
+        <tr><th>Risk</th><th>Probability</th><th>Impact</th><th>Mitigation</th></tr>
+        ${c.risks.map(r => `<tr><td>${r.risk}</td><td>${riskTag(r.prob)}</td><td>${riskTag(r.impact)}</td><td>${r.mitigation}</td></tr>`).join('')}
+      </table>
+    </div>
+
+    <div class="charter-section">
+      <h4>Communication Plan</h4>
+      <table class="risk-table">
+        <tr><th>Audience</th><th>Frequency</th><th>Channel</th><th>Owner</th></tr>
+        ${c.commPlan.map(cp => `<tr><td>${cp.audience}</td><td>${cp.frequency}</td><td>${cp.channel}</td><td>${cp.owner}</td></tr>`).join('')}
+      </table>
+    </div>
+
+    <div class="charter-section">
+      <h4>Assumptions</h4>
+      <ul>${c.assumptions.map(a => `<li>${a}</li>`).join('')}</ul>
+    </div>
+
+    <div class="charter-section">
+      <h4>Constraints</h4>
+      <ul>${c.constraints.map(a => `<li>${a}</li>`).join('')}</ul>
+    </div>
+
+    <div class="charter-section">
+      <h4>Success Criteria</h4>
+      <ul>${c.successCriteria.map(a => `<li>${a}</li>`).join('')}</ul>
+    </div>
+  `;
+
+  document.getElementById('jsonOut').textContent = JSON.stringify(c, null, 2);
+  window._charter = c;
+}
+
+// ─── Main generate function ───────────────────────────────────────────────────
+async function generateCharter() {
+  const name = document.getElementById('projectName').value.trim();
+  const desc = document.getElementById('projectDesc').value.trim();
+  if (!name || !desc) { alert('Please fill in Project Name and Description.'); return; }
+
+  const data = {
+    name, desc,
+    type: document.getElementById('projectType').value,
+    industry: document.getElementById('industry').value.trim(),
+    sponsor: document.getElementById('sponsor').value.trim(),
+    startDate: document.getElementById('startDate').value,
+    endDate: document.getElementById('endDate').value,
+    budget: document.getElementById('budget').value.trim(),
+    stakeholders: getStakeholders(),
+  };
+
+  const btn = document.querySelector('.btn-primary');
+  btn.disabled = true;
+  document.getElementById('btnText').textContent = 'Generating…';
+  document.getElementById('btnIcon').innerHTML = '<span class="loader"></span>';
+
+  try {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    let charter;
+    if (apiKey) {
+      charter = await generateWithAI(data, apiKey);
+    } else {
+      await new Promise(r => setTimeout(r, 600)); // simulate thinking
+      charter = generateLocal(data);
+    }
+    renderCharter(charter);
+    document.getElementById('outputPlaceholder').classList.add('hidden');
+    document.getElementById('outputSection').classList.remove('hidden');
+  } catch (e) {
+    alert('Error generating charter: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('btnText').textContent = 'Generate Charter';
+    document.getElementById('btnIcon').textContent = '✨';
+  }
+}
+
+// ─── Export ───────────────────────────────────────────────────────────────────
+function exportDoc() {
+  if (!window._charter) return;
+  const c = window._charter;
+  const html = '<html><head><meta charset="UTF-8"><style>body{font-family:Calibri,sans-serif;font-size:11pt;margin:2cm}h1{color:#4f46e5}h2{color:#374151;border-bottom:1px solid #e5e7eb;padding-bottom:4px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #d1d5db;padding:6px 10px}th{background:#f3f4f6}</style></head><body>' +
+    '<h1>' + c.title + ' — Project Charter</h1>' +
+    '<p><b>Type:</b> ' + c.type + ' | <b>Industry:</b> ' + c.industry + ' | <b>Budget:</b> ' + c.budget + ' | <b>Duration:</b> ' + c.duration + '</p>' +
+    '<h2>Description</h2><p>' + c.description + '</p>' +
+    '<h2>Goals</h2><ul>' + c.goals.map(g => '<li>' + g + '</li>').join('') + '</ul>' +
+    '<h2>Deliverables</h2><ul>' + c.deliverables.map(d => '<li>' + d + '</li>').join('') + '</ul>' +
+    '<h2>Risk Register</h2><table><tr><th>Risk</th><th>Prob</th><th>Impact</th><th>Mitigation</th></tr>' + c.risks.map(r => '<tr><td>' + r.risk + '</td><td>' + r.prob + '</td><td>' + r.impact + '</td><td>' + r.mitigation + '</td></tr>').join('') + '</table>' +
+    '</body></html>';
+  const blob = new Blob([html], {type: 'application/msword'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = c.title.replace(/\s+/g,'-') + '-charter.doc'; a.click();
+}
+
+function exportJSON() {
+  if (!window._charter) return;
+  const blob = new Blob([JSON.stringify(window._charter, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'project-charter.json'; a.click();
+}
+
+function copyToClipboard() {
+  if (!window._charter) return;
+  navigator.clipboard.writeText(JSON.stringify(window._charter, null, 2)).then(() => alert('Copied to clipboard!'));
+}
+
+function resetForm() {
+  document.getElementById('projectName').value = '';
+  document.getElementById('projectDesc').value = '';
+  document.getElementById('industry').value = '';
+  document.getElementById('sponsor').value = '';
+  document.getElementById('startDate').value = '';
+  document.getElementById('endDate').value = '';
+  document.getElementById('budget').value = '';
+  document.getElementById('apiKey').value = '';
+  document.getElementById('outputSection').classList.add('hidden');
+  document.getElementById('outputPlaceholder').classList.remove('hidden');
+  updateProgress();
+}
+</script>
+</body>
+</html>
